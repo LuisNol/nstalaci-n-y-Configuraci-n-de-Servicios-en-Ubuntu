@@ -2,7 +2,7 @@
 
 > **Guía completa para la instalación y configuración de servicios DNS, Web, DHCP, FTP y Correo en Ubuntu/Debian**
 
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-20.04%2B-orange.svg)](https://ubuntu.com/)
+[![Ubuntu](https://img.shields.io/badge/ubuntu-24.04.2%2B-orange.svg)](https://ubuntu.com/)
 [![Debian](https://img.shields.io/badge/Debian-10%2B-red.svg)](https://debian.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -52,7 +52,7 @@ DHCP Pool: 172.26.22.110 - 172.26.22.120
 sudo apt update
 
 # Instalar BIND9 y utilidades
-sudo apt install bind9 bind9utils bind9-doc dnsutils -y
+sudo apt install bind9 
 
 # Verificar instalación
 sudo systemctl status bind9
@@ -117,28 +117,27 @@ sudo nano /etc/bind/db.redes
 
 **📄 Archivo: `/etc/bind/db.redes`**
 ```bash
+;
+; Zona apple.tm
+;
 $TTL 604800
 @   IN  SOA apple.tm. admin.apple.tm. (
-            2025052901 ; Serial (YYYYMMDDNN)
+            2025052901 ; Serial
             10h        ; Refresh
             15m        ; Retry
             48h        ; Expire
             604800     ; Negative Cache TTL
 )
 
-; Servidor de nombres
 @       IN  NS      apple.tm.
-
-; Registro A principal
 @       IN  A       172.26.22.102
-
-; Servicios
 mail    IN  A       172.26.22.102
 www     IN  CNAME   apple.tm.
+@       IN  MX      10 apple.tm.
 cisco   IN  A       172.26.22.102
-
-; Registro MX para correo
-@       IN  MX 10   apple.tm.
+ns      IN  A       172.26.22.102
+ftp     IN  A       172.26.22.102
+mail    IN  A       172.26.22.102
 ```
 
 ### 🔄 Zona Inversa
