@@ -1,14 +1,12 @@
-# ==========================================
-# Instalación y Configuración de Servicios
-# DNS, Web, DHCP, FTP, y Correo en Ubuntu
-# ==========================================
+# CONFIGURACIÓN DE SERVICIOS: DNS, WEB, DHCP, FTP Y CORREO
 
-# --------- 1. DNS (Bind9) ----------------
-sudo apt update
-sudo apt install -y bind9 bind9utils bind9-doc dnsutils
+## DNS (BIND9)
 
-# Configurar named.conf.options
-cat <<EOF | sudo tee /etc/bind/named.conf.options
+# Editar configuración general
+cd /etc/bind/
+nano named.conf.options
+
+# Contenido de named.conf.options:
 options {
     directory "/var/cache/bind";
 
@@ -23,24 +21,25 @@ options {
     listen-on-v6 { any; };
     allow-query { any; };
 };
-EOF
 
-# Configurar named.conf.local con zonas
-cat <<EOF | sudo tee /etc/bind/named.conf.local
+# Configurar zonas locales
+sudo nano named.conf.local
+
+# Agregar:
 zone "apple.tm" {
     type master;
-    file "/etc/bind/db.apple.tm";
+    file "/etc/bind/db.redes";
 };
 
 zone "22.26.172.in-addr.arpa" {
     type master;
     file "/etc/bind/db.22.26.172";
 };
-EOF
 
-# Crear archivo de zona directa
-cat <<EOF | sudo tee /etc/bind/db.apple.tm
-\$TTL 604800
+# Archivo db.redes
+sudo nano /etc/bind/db.redes
+
+$TTL 604800
 @   IN  SOA apple.tm. admin.apple.tm. (
             2025052901 ; Serial
             10h        ; Refresh
@@ -48,40 +47,45 @@ cat <<EOF | sudo tee /etc/bind/db.apple.tm
             48h        ; Expire
             604800     ; Negative Cache TTL
 )
+
 @       IN  NS      apple.tm.
 @       IN  A       172.26.22.102
 mail    IN  A       172.26.22.102
 www     IN  CNAME   apple.tm.
 @       IN  MX 10   apple.tm.
 cisco   IN  A       172.26.22.102
-EOF
 
-# Crear archivo de zona inversa
-cat <<EOF | sudo tee /etc/bind/db.22.26.172
-\$TTL 604800
-@   IN  SOA apple.tm. admin.apple.tm. (
-            2025052901 ; Serial
-            10h        ; Refresh
-            15m        ; Retry
-            48h        ; Expire
-            604800     ; Negative Cache TTL
+# Archivo de zona inversa db.22.26.172.in-addr.arpa
+sudo nano /etc/bind/db.22.26.172.in-addr.arpa
+
+$TTL 604800
+@       IN  SOA     apple.tm. admin.apple.tm. (
+                        2025052901 ; Serial
+                        10h        ; Refresh
+                        15m        ; Retry
+                        48h        ; Expire
+                        604800     ; Negative Cache TTL
 )
+
 @       IN  NS      apple.tm.
 102     IN  PTR     apple.tm.
-EOF
 
+# Recargar configuración
 sudo systemctl reload bind9
 
-# --------- 2. Servidor Web (Apache2) ----------------
-sudo apt install -y apache2
-sudo ufw allow 'Apache Full'
 
-# Cambiar permisos a carpeta web (ajustar $USER y ruta según sea necesario)
+## SERVICIO WEB (Apache)
+
+sudo ufw status
+sudo ufw app list
+sudo ufw allow 'apache full'
+
 sudo chown -R $USER:$USER /var/www/pagina_web/
 sudo chmod -R 755 /var/www/pagina_web/
 
-# Crear archivo de configuración del sitio
-cat <<EOF | sudo tee /etc/apache2/sites-available/pagina_web.conf
+cd /etc/apache2/sites-available/
+
+# Crear archivo de sitio virtual (ejemplo: pagina_web.conf)
 <VirtualHost *:80>
     ServerAdmin admin@apple.tm
     ServerName apple.tm
@@ -89,45 +93,57 @@ cat <<EOF | sudo tee /etc/apache2/sites-available/pagina_web.conf
     DocumentRoot /var/www/pagina_web/html
     DirectoryIndex index.html
 </VirtualHost>
-EOF
 
 sudo a2ensite pagina_web.conf
 sudo a2dissite 000-default.conf
+
 sudo apache2ctl configtest
 sudo systemctl reload apache2
 
-# --------- 3. DHCP Server (isc-dhcp-server) ----------------
-sudo apt install -y isc-dhcp-server
+# Probar en el navegador
+http://www.apple.tm/
+
+
+## DHCP (isc-dhcp-server)
+
+sudo apt install isc-dhcp-server
 
 # Configurar interfaz en /etc/default/isc-dhcp-server
-sudo sed -i 's/^INTERFACESv4=""/INTERFACESv4="ens33"/' /etc/default/isc-dhcp-server
+sudo nano /etc/default/isc-dhcp-server
+# Modificar INTERFACESv4="ens33"
 
-# Configurar DHCP en /etc/dhcp/dhcpd.conf
-cat <<EOF | sudo tee /etc/dhcp/dhcpd.conf
+sudo nano /etc/dhcp/dhcpd.conf
+
 authoritative;
 
 subnet 172.26.22.0 netmask 255.255.255.0 {
   range 172.26.22.110 172.26.22.120;
   option routers rtr-22-0-1.apple.tm, rtr-22-0-2.apple.tm;
 }
-EOF
 
 sudo systemctl restart isc-dhcp-server
 
-# --------- 4. FTP Server (vsftpd) ----------------
+
+## FTP (vsftpd)
+
 sudo apt update
-sudo apt install -y vsftpd
-sudo systemctl enable --now vsftpd
+sudo apt install vsftpd
+
+sudo systemctl status vsftpd
+sudo systemctl restart vsftpd
+sudo systemctl enable vsftpd
 
 sudo ufw allow 21/tcp
-sudo ufw allow 10000:10100/tcp
+sudo ufw allow 10000:10100/tcp  # para puertos pasivos
 sudo ufw reload
 
-# Respaldar configuración original
 sudo cp /etc/vsftpd.conf /etc/vsftpd.conf.bak
 
-# Configurar vsftpd
-cat <<EOF | sudo tee /etc/vsftpd.conf
+sudo nano /etc/vsftpd.userlist
+# Añadir usuario: sumaran
+
+sudo nano /etc/vsftpd.conf
+# Configuraciones principales:
 listen=YES
 anonymous_enable=NO
 local_enable=YES
@@ -137,28 +153,30 @@ allow_writeable_chroot=YES
 pasv_enable=YES
 pasv_min_port=10000
 pasv_max_port=10100
-EOF
 
-# Ajustar permisos usuario FTP (reemplazar 'sumaran' por usuario real)
 sudo chown sumaran:sumaran /home/sumaran
 sudo chmod 755 /home/sumaran
 
-echo "Archivo de prueba FTP" | sudo tee /home/sumaran/prueba.txt
+echo "Archivo de prueba FTP" > /home/sumaran/prueba.txt
 sudo chown sumaran:sumaran /home/sumaran/prueba.txt
 sudo chmod 644 /home/sumaran/prueba.txt
 
-# --------- 5. Servidor de Correo (Postfix + Dovecot) ----------------
-sudo apt install -y postfix mailutils dovecot-core dovecot-imapd dovecot-pop3d
 
-# (Opcional) Editar configuración de Postfix en /etc/postfix/main.cf según necesidades
-# (Opcional) Configurar SSL y autenticación en Dovecot editando:
-# /etc/dovecot/conf.d/10-ssl.conf
-# /etc/dovecot/conf.d/10-auth.conf
-# /etc/dovecot/conf.d/10-mail.conf
+## MAIL (Postfix y Dovecot)
 
-sudo systemctl restart postfix dovecot
+sudo apt install postfix
+sudo apt install mailutils
+sudo apt install dovecot-core dovecot-imapd dovecot-pop3d
 
-# Test envío de correo (reemplazar destinatario)
+# Editar configuración principal postfix
+sudo nano /etc/postfix/main.cf
+
+# Configuraciones Dovecot:
+sudo nano /etc/dovecot/conf.d/10-ssl.conf
+sudo nano /etc/dovecot/conf.d/10-auth.conf
+sudo nano /etc/dovecot/conf.d/10-mail.conf
+
+sudo systemctl restart postfix
+
+# Enviar correo de prueba
 echo "Subject: Correo Maildir 1" | sendmail luis@mail.apple.tm
-
-# Fin
