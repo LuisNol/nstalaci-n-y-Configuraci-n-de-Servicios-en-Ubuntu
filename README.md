@@ -240,7 +240,7 @@ sudo ufw allow 'Apache Full'
 sudo mkdir -p /var/www/pagina_web/html
 
 # Crear página de prueba
-echo "<h1>¡Bienvenido a apple.tm!</h1>" | sudo tee /var/www/pagina_web/html/index.html
+echo "<h1>¡Bienvenido a apple.tm!</h1>" | sudo tee /var/www/pagina_web/index.html
 ```
 
 ### 👤 Configuración de Permisos
@@ -259,7 +259,7 @@ sudo chmod -R 755 /var/www/pagina_web/
 cd /etc/apache2/sites-available/
 sudo nano pagina_web.conf
 sudo nano /etc/apache2/apache2.conf
-ServerName apple.t
+ServerName apple.tm
 ```
 
 **📄 Archivo: `/etc/apache2/sites-available/pagina_web.conf`**
