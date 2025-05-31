@@ -6,6 +6,14 @@
 [![Debian](https://img.shields.io/badge/Debian-10%2B-red.svg)](https://debian.org/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+## 👨‍💻 Autor
+
+**Nolberto Luis Sumaran Pimentel**
+- 📧 Email: nolberto.sumaran@gmail.com
+- 🐙 GitHub: [@LuisNol](https://github.com/LuisNol)
+- 💼 LinkedIn: [Nolberto Luis Sumaran Pimentel](https://www.linkedin.com/in/nolberto-luis-sumaran-pimentel-65419a221/)
+
+> *Especialista en Administración de Sistemas y Redes - Configuración de Servicios de Infraestructura*
 ## 📋 Tabla de Contenidos
 
 - [🔧 Servicios Incluidos](#-servicios-incluidos)
@@ -148,6 +156,9 @@ sudo nano /etc/bind/db.22.26.172
 
 **📄 Archivo: `/etc/bind/db.22.26.172`**
 ```bash
+;
+; Zona inversa
+;
 $TTL    604800
 @       IN  SOA     apple.tm. admin.apple.tm. (
                         2025052901 ; Serial
@@ -157,11 +168,10 @@ $TTL    604800
                         604800     ; Negative Cache TTL
 )
 
-; Servidor de nombres
 @       IN  NS      apple.tm.
-
-; Resolución inversa
 102     IN  PTR     apple.tm.
+102     IN  PTR     ftp.apple.tm.
+102     IN  PTR     mail.apple.tm.
 ```
 
 ### 🚀 Activación del Servicio
@@ -176,6 +186,21 @@ sudo named-checkzone 22.26.172.in-addr.arpa /etc/bind/db.22.26.172
 sudo systemctl reload bind9
 sudo systemctl enable bind9
 sudo systemctl status bind9
+
+# Prueba usando nslookup con ip 
+root@serverubuntu:/home/sumaran# nslookup 172.26.22.102
+102.22.26.172.in-addr.arpa	name = apple.tm.
+102.22.26.172.in-addr.arpa	name = mail.apple.tm.
+102.22.26.172.in-addr.arpa	name = ftp.apple.tm.
+
+# Prueba usando nslookup con dominio 
+root@serverubuntu:/home/sumaran# nslookup apple.tm
+Server:		172.26.22.102
+Address:	172.26.22.102#53
+
+Name:	apple.tm
+Address: 172.26.22.102
+
 ```
 
 ---
@@ -233,27 +258,18 @@ sudo chmod -R 755 /var/www/pagina_web/
 ```bash
 cd /etc/apache2/sites-available/
 sudo nano pagina_web.conf
+sudo nano /etc/apache2/apache2.conf
+ServerName apple.t
 ```
 
 **📄 Archivo: `/etc/apache2/sites-available/pagina_web.conf`**
 ```apache
 <VirtualHost *:80>
-    # Información del administrador
     ServerAdmin admin@apple.tm
-    
-    # Configuración del dominio
     ServerName apple.tm
     ServerAlias www.apple.tm
-    
-    # Directorio raíz del sitio
-    DocumentRoot /var/www/pagina_web/html
-    
-    # Archivo índice por defecto
+    DocumentRoot /var/www/pagina_web
     DirectoryIndex index.html
-    
-    # Logs del sitio
-    ErrorLog ${APACHE_LOG_DIR}/apple_error.log
-    CustomLog ${APACHE_LOG_DIR}/apple_access.log combined
 </VirtualHost>
 ```
 
